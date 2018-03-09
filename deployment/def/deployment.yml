@@ -44,6 +44,20 @@ spec:
   selector:
     app: store
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: task-store-web-service-internal
+  labels:
+    system: a01
+    group: base
+    retire: near
+spec:
+  ports:
+  - port: 80
+  selector:
+    app: store
+---
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
@@ -96,6 +110,20 @@ metadata:
   labels:
     system: a01
     group: base
+spec:
+  ports:
+  - port: 80
+  selector:
+    app: email
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: a01-svc-email-service
+  labels:
+    system: a01
+    group: base
+    retire: near
 spec:
   ports:
   - port: 80
