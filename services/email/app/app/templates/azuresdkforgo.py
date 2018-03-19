@@ -1,9 +1,35 @@
 from typing import List
+import operator
 from collections import defaultdict
 from datetime import datetime, timedelta
 from tabulate import tabulate
 from app.templates.template import Template
 
+
+def get_top_failing(failure: list, top=3) -> str:
+    if not failure:
+        return 'There were no failures'
+
+    services = defaultdict(lambda: 0)
+    for fail in failure:
+        service = fail[1]
+        services[service] = services[service] + 1
+
+    sorted_fail = sorted(services.items(), key=operator.itemgetter(1), reverse=True)
+
+    true_top = len(sorted_fail)
+    if true_top > top:
+        true_top = top
+
+    top_fails = []
+
+    for service in sorted_fail[:true_top]:
+        top_fails.append(
+            (service[0], # service name
+             service[1]) # tests failed in the service
+        )
+
+    return tabulate(top_fails, headers=("Service", "Tests"), tablefmt="html")
 
 class TemplateGo(Template):
     def get_context(self, run: dict, tasks: List[dict]) -> dict:
@@ -54,7 +80,8 @@ class TemplateGo(Template):
             'summaries': tabulate(summaries, tablefmt="html"),
             'failures': tabulate(failure, headers=(
                 "Task ID", "Service", "Test", "Status", "Result", "Duration (ms)"), tablefmt="html"),
-            'runID': run['id']
+            'runID': run['id'],
+            'services': get_top_failing(failure),
         }
 
     def get_subject(self, run: dict, tasks: List[dict]) -> str:
