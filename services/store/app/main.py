@@ -260,7 +260,7 @@ def auth(fn):  # pylint: disable=invalid-name
         except jwt.ExpiredSignatureError:
             return Response(json.dumps({'error': 'Expired', 'message': 'The JWT token is expired.'}), 401)
         except UnicodeDecodeError:
-            return jsonify({'error': 'Bad Request', 'message': 'Authorization header cannot be parsed'}), 400
+            return jsonify({'error': 'Bad Request', 'message': 'Authorization header cannot be parsed.'}), 400
 
         return fn(*args, **kwargs)
 
@@ -356,6 +356,12 @@ def get_runs():
         query = query.limit(request.args['last'])
     if 'skip' in request.args:
         query = query.offset(request.args['skip'])
+    if 'product' in request.args:
+        query = query.filter(Run.details.contains(request.args['product']))
+    if 'before' in request.args:
+        query = query.filter(Run.creation <= request.args['before'])
+    if 'after' in request.args:
+        query = query.filter(Run.creation >= request.args['after'])
 
     return jsonify([r.digest() for r in query.all()])
 
