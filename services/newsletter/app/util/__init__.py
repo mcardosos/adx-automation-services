@@ -10,8 +10,6 @@ import coloredlogs
 import requests
 from kubernetes import client as kube_client
 from kubernetes import config as kube_config
-from tabulate import tabulate
-import template
 
 coloredlogs.install(level=logging.INFO)
 logger = logging.getLogger('a01.svc.email.newsletter')  # pylint: disable=invalid-name
@@ -42,12 +40,12 @@ def http_get(path: str, params: dict = None):
 
 def get_receivers(product: str) -> str:
     receivers = get_secret_data(product, 'owners.weekly')
-    logger.info(f'receivers for weekly email for product {product} are {receivers}')
+    logger.info(f'receivers for email are {receivers}')
     return receivers
 
 def get_template(product: str) -> str:
     template_uri = get_secret_data(product, 'email.template.weekly')
-    logger.info(f'template for weekly email for product {product} is {template_uri}')
+    logger.info(f'template for email is {template_uri}')
     return template_uri
 
 def get_secret_data(product: str, data: str) -> str:
@@ -70,39 +68,7 @@ def get_task_store_uri(path: str) -> str:
     if not DEV:
         return f'https://{STORE_HOST}/api/{path}'
     return f'http://{STORE_HOST}/api/{path}'
-
-def create_report():
-    products = PRODUCTS.split(',')
-    for product in products:
-        receivers = get_receivers(product)
-        template_url = get_template(product)
-
-        before = (datetime.datetime.now().date() - datetime.timedelta(days=1))
-        after = (before - datetime.timedelta(days=7))
-        params = {
-            'product': product,
-            'before': before.strftime('%m-%d-%Y'),
-            'after': after.strftime('%m-%d-%Y')
-        }
-
-        runs = http_get('runs', params=params)
-        logger.info(f'got runs from {after} to {before}')
-
-        tasks = []
-        for run in runs:
-            run_id = run['id']
-            tasks = http_get(f'run/{run_id}/tasks')
-
-        failing_tasks = http_get('runs/tasks/fails', params=params)
-        top_fails = tabulate(failing_tasks, headers=("Tests", "Times failed"), tablefmt="html")
-
-        content, subject = template.render(template_uri=template_url, runs=runs,
-                                           tasks=tasks, top_fails=top_fails, after=after, before=before)
-
-        print(content)
-        print(subject)
-        send_email(receivers, subject, content)
-
+    
 def send_email(receivers: str, subject: str, content: str):
     mail = MIMEMultipart()
     mail['Subject'] = subject
