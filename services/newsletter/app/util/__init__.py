@@ -18,11 +18,16 @@ INTERNAL_COMMUNICATION_KEY = os.environ['A01_INTERNAL_COMKEY']
 SMTP_SERVER = os.environ['A01_REPORT_SMTP_SERVER']
 SMTP_USER = os.environ['A01_REPORT_SENDER_ADDRESS']
 SMTP_PASS = os.environ['A01_REPORT_SENDER_PASSWORD']
-STORE_HOST = os.environ.get('A01_STORE_NAME', 'task-store-web-service-internal')
 
 DEV = os.environ['DEV']
 PRODUCTS = os.environ['PRODUCTS'] # products that requirte a runs newsletter
-NAMESPACE = 'a01-prod'
+
+def get_task_store_uri(path: str) -> str:
+    # in debug mode, the service is likely run out of a cluster, switch to https schema
+    store_host = os.environ.get('A01_STORE_NAME', 'task-store-web-service-internal')
+    if not DEV:
+        return f'https://{store_host}/api/{path}'
+    return f'http://{store_host}/api/{path}'
 
 def http_get(path: str, params: dict = None):
     class InternalAuth(object):  # pylint: disable=too-few-public-methods
@@ -37,6 +42,18 @@ def http_get(path: str, params: dict = None):
         return session.get(get_task_store_uri(path), params=params).json()
     except (requests.HTTPError, ValueError, TypeError):
         return None
+
+def send_email(receivers: str, subject: str, content: str):
+    mail = MIMEMultipart()
+    mail['Subject'] = subject
+    mail['From'] = SMTP_USER
+    mail['To'] = receivers
+    mail.attach(MIMEText(content, 'html'))
+
+    with SMTP(SMTP_SERVER) as server:
+        server.starttls()
+        server.login(SMTP_USER, SMTP_PASS)
+        server.send_message(mail)
 
 def get_receivers(product: str) -> str:
     receivers = get_secret_data(product, 'owners.weekly')
@@ -55,28 +72,11 @@ def get_secret_data(product: str, data: str) -> str:
         kube_config.load_incluster_config()
 
     api = kube_client.CoreV1Api()
-    secret = api.read_namespaced_secret(name=product, namespace=NAMESPACE)
+    namespace = os.environ.get('A01_NAMESPACE', 'a01-prod')
+    secret = api.read_namespaced_secret(name=product, namespace=namespace)
 
     if data not in secret.data:
         return None
 
     secret_data = base64.standard_b64decode(secret.data[data]).decode("utf-8")
     return secret_data
-
-def get_task_store_uri(path: str) -> str:
-    # in debug mode, the service is likely run out of a cluster, switch to https schema
-    if not DEV:
-        return f'https://{STORE_HOST}/api/{path}'
-    return f'http://{STORE_HOST}/api/{path}'
-    
-def send_email(receivers: str, subject: str, content: str):
-    mail = MIMEMultipart()
-    mail['Subject'] = subject
-    mail['From'] = SMTP_USER
-    mail['To'] = receivers
-    mail.attach(MIMEText(content, 'html'))
-
-    with SMTP(SMTP_SERVER) as server:
-        server.starttls()
-        server.login(SMTP_USER, SMTP_PASS)
-        server.send_message(mail)
