@@ -5,6 +5,8 @@ droids. The A01Store plays a passive role in the producer-consumer
 relationship meaning the driver is the consumer (A01Droid).
 """
 from datetime import datetime, timedelta
+from collections import defaultdict
+import operator
 import base64
 import logging
 import os
@@ -365,6 +367,39 @@ def get_runs():
 
     return jsonify([r.digest() for r in query.all()])
 
+@app.route('/api/runs/tasks/fails')
+@auth
+def get_failing_tasks():
+    query_run = Run.query.order_by(Run.creation.desc())
+    if 'product' in request.args:
+        query_run = query_run.filter(Run.details.contains(request.args['product']))
+    if 'before' in request.args:
+        query_run = query_run.filter(Run.creation <= request.args['before'])
+    if 'after' in request.args:
+        query_run = query_run.filter(Run.creation >= request.args['after'])
+    runs = query_run.all()
+
+    failures = []
+    for run in runs:
+        for _t in run.tasks:
+            task = _t.digest()
+            if not task['result'] == 'Passed':
+                failures.append(task)
+
+    tests = defaultdict(lambda: 0)
+    for fail in failures:
+        name = fail['name']
+        tests[name] = tests[name] + 1
+    sorted_fail = sorted(tests.items(), key=operator.itemgetter(1), reverse=True)
+
+    top_fails = []
+    for test in sorted_fail:
+        top_fails.append(
+            (test[0],
+             test[1])
+        )
+
+    return jsonify(top_fails)
 
 @app.route('/api/run', methods=['POST'])
 @auth
@@ -462,7 +497,6 @@ def get_tasks(run_id):
         return jsonify({'error': f'run <{run_id}> is not found'}), 404
 
     return jsonify([t.digest() for t in run.tasks])
-
 
 @app.route('/api/run/<run_id>/task', methods=['POST'])
 @auth
