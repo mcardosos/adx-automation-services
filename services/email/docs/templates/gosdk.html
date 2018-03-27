@@ -1,6 +1,5 @@
 {%- set passed_count = tasks|selectattr("result", "eq", "Passed")|list|length %}
 {%- set failed_count = tasks|selectattr("result", "ne", "Passed")|list|length %}
-{%- set product = run.details['a01.reserved.product']|title %}
 {%- set failures = tasks|selectattr('result', 'ne', 'Passed')|list|sort(attribute='settings.classifier.identifier') -%}
 <html>
 <head>
@@ -41,7 +40,7 @@
 <body>
 <div class="container">
     <div class="row">
-        <h1>{{ product }}</h1>
+        <h1>Azure SDK for Go Samples</h1>
         <h2>Automation Run: {{ run.id }}
             <span class="passed">Pass {{ passed_count }}</span>
             <span class="failed">Fail {{ failed_count }}</span>

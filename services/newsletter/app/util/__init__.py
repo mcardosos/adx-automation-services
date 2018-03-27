@@ -61,7 +61,7 @@ def get_receivers(product: str) -> str:
     return receivers
 
 def get_template(product: str) -> str:
-    template_uri = get_secret_data(product, 'email.template.weekly')
+    template_uri = get_secret_data(product, 'email.path.template.weekly')
     logger.info(f'template for email is {template_uri}')
     return template_uri
 
