@@ -1,6 +1,4 @@
-
 from datetime import datetime, timedelta
-from tabulate import tabulate
 from util import (
     PRODUCTS,
     get_receivers,
@@ -34,15 +32,12 @@ def main() -> None:
         for run in runs:
             run_id = run['id']
             tasks = http_get(f'run/{run_id}/tasks')
-            all_tasks.append(tasks)
+            for task in tasks:
+                all_tasks.append(task)
         logger.info('got all tasks from runs')
 
-        failing_tasks = http_get('runs/tasks/fails', params=params)
-        top_fails = tabulate(failing_tasks, headers=("Tests", "Times failed"), tablefmt="html")
-        logger.info('got all failed tasks by test name, ordered by times failed')
-
         content, subject = templates.render(template_uri=template_url, runs=runs,
-                                            tasks=all_tasks, top_fails=top_fails, after=after, before=before)
+                                            tasks=all_tasks, after=after, before=before)
         logger.info('rendered email content')
 
         send_email(receivers, subject, content)

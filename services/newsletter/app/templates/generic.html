@@ -1,7 +1,7 @@
 {%- set run_count = runs|list|length %}
 {%- set test_count = tasks|list|length %}
 {%- set passed_count = tasks|selectattr("result", "eq", "Passed")|list|length %}
-{%- set failed = tasks|selectattr("result", "ne", "Passed")|list %}
+{%- set failed_count = tasks|selectattr("result", "ne", "Passed")|list|length %}
 {%- set product = runs[0].details['a01.reserved.product']|title %}
 
 <html>
@@ -40,14 +40,10 @@
         <h3>Tests</h3>
         <h4>
             <p><span class="passed">Pass {{ passed_count }} ({{ "{0:.2f}".format(passed_count / test_count * 100) }}%)</span></p>
-            <p><span class="failed">Fail {{ failed|length }} ({{ "{0:.2f}".format(failed|length / test_count * 100) }}%)</span></p>
+            <p><span class="failed">Fail {{ failed_count }} ({{ "{0:.2f}".format(failed_count / test_count * 100) }}%)</span></p>
             <p>Total  {{ test_count }}</p>
         </h4>
-        <p>Average tests failing per run: {{ failed|length / run_count }}</p>        
-    </div>
-    <div>
-        <h2>Top failing tests</h2>
-        <p>{{ top_fails }}</p>
+        <p>Average tests failing per run: {{ "{0:.2f}".format(failed_count / run_count) }}</p>        
     </div>
     <div>
         <h2>More details</h2>

@@ -6,7 +6,7 @@ from lxml import html
 
 GENERIC_TEMPLATE_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'generic.html')
 
-def render(template_uri: str, runs: List[dict], tasks: List[dict], top_fails: str,
+def render(template_uri: str, runs: List[dict], tasks: List[dict],
            after: str, before: str) -> Tuple[str, str]:
     # generate mail body
     env = Environment(
@@ -14,7 +14,7 @@ def render(template_uri: str, runs: List[dict], tasks: List[dict], top_fails: st
         extensions=['jinja2.ext.do'],
         )
     template = env.get_template(template_uri)
-    content = template.render(runs=runs, tasks=tasks, top_fails=top_fails, after=after, before=before)
+    content = template.render(runs=runs, tasks=tasks, after=after, before=before)
 
     # extract title
     try:
