@@ -5,8 +5,6 @@ droids. The A01Store plays a passive role in the producer-consumer
 relationship meaning the driver is the consumer (A01Droid).
 """
 from datetime import datetime, timedelta
-from collections import defaultdict
-import operator
 import base64
 import logging
 import os
