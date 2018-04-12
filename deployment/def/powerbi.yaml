@@ -14,7 +14,6 @@ spec:
     spec:
       containers:
       - name: report-svc
-        command: ["powerbi"]
         image: adxautomationbase.azurecr.io/powerbi:0.1.0
         ports:
         - containerPort: 80
